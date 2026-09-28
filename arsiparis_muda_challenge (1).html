@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arsiparis Muda Challenge - Simulasi Kearsipan SMK MPLB</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        desk: '#f4efe6',
+                        wood: '#e8decb',
+                        navy: '#1e3a8a',
+                        navyDark: '#0f172a',
+                        sticky: '#fef08a',
+                        stickyBorder: '#fde047',
+                        accent: '#d97706',
+                        accentHover: '#b45309',
+                        stampGreen: '#15803d',
+                        stampRed: '#b91c1c'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Segoe UI', 'Roboto', 'sans-serif'],
+                        handwriting: ['Courier New', 'Courier', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @media (prefers-reduced-motion: reduce) {
+            *, ::before, ::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+
+        .folder-tab {
+            clip-path: polygon(0 0, 85% 0, 100% 100%, 0% 100%);
+        }
+
+        .stamp-approved {
+            border: 3px double #15803d;
+            color: #15803d;
+            transform: rotate(-6deg);
+            box-shadow: 0 0 0 2px rgba(21, 128, 61, 0.2);
+        }
+
+        .stamp-revision {
+            border: 3px double #b91c1c;
+            color: #b91c1c;
+            transform: rotate(4deg);
+            box-shadow: 0 0 0 2px rgba(185, 28, 28, 0.2);
+        }
+
+        /* Custom Scrollbar for sleek desk look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e8decb;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 4px;
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white !important; color: black !important; }
+        }
+    </style>
+</head>
+<body class="bg-desk text-gray-800 min-h-screen flex flex-col font-sans antialiased selection:bg-amber-200">
+
+    <!-- Screen Reader Live Region for Accessibility -->
+    <div id="aria-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Header Navigation -->
+    <header class="bg-navy text-white shadow-md border-b-4 border-amber-600 no-print sticky top-0 z-30">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-2">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="resetApp()">
+                <div class="bg-amber-500 text-navy font-black text-xl px-3 py-1 rounded shadow-inner" aria-hidden="true">
+                    📁
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-wide">Arsiparis Muda Challenge</h1>
+                    <p class="text-xs text-blue-200">Simulasi Kearsipan SMK MPLB</p>
+                </div>
+            </div>
+
+            <!-- Header Action Controls -->
+            <div id="header-controls" class="flex items-center space-x-2 text-sm">
+                <span id="display-student-name" class="hidden sm:inline-block bg-blue-900/60 px-3 py-1.5 rounded border border-blue-700 text-blue-100 font-medium">
+                    Siswa: -
+                </span>
+                <button id="btn-rulebook" onclick="openRulebookModal()" class="hidden bg-amber-600 hover:bg-amber-700 text-white font-semibold px-3 py-2 rounded-lg transition border border-amber-500 flex items-center gap-1 min-h-[44px] focus:ring-2 focus:ring-amber-300">
+                    📖 <span class="hidden md:inline">Buku</span> Aturan Indeks
+                </button>
+                <button id="btn-help" onclick="openHelpModal()" class="hidden bg-blue-800 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition border border-blue-600 min-h-[44px] focus:ring-2 focus:ring-blue-300">
+                    ❓ Petunjuk
+                </button>
+                <button id="btn-teacher-login-nav" onclick="openTeacherLoginModal()" class="bg-amber-500 hover:bg-amber-400 text-navy font-extrabold px-3 py-2 rounded-lg transition border border-amber-300 flex items-center gap-1 min-h-[44px] shadow">
+                    🔑 <span class="hidden sm:inline">Mode</span> Guru
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Desk Canvas -->
+    <main class="flex-grow max-w-6xl w-full mx-auto p-3 sm:p-6 flex flex-col justify-center">
+
+        <!-- ================= 1. SCREEN: WELCOME ================= -->
+        <section id="screen-welcome" class="bg-white rounded-2xl shadow-xl border-2 border-wood p-6 sm:p-10 max-w-2xl mx-auto w-full my-auto">
+            <div class="text-center mb-6">
+                <span class="inline-block bg-amber-100 text-amber-800 font-bold text-xs px-3 py-1 rounded-full uppercase tracking-wider mb-2 border border-amber-300">
+                    Lembaga Jasa Kearsipan Kantor Muda
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-navy">Selamat Datang, Arsiparis Junior!</h2>
+                <p class="text-gray-600 text-base mt-2 leading-relaxed">
+                    Anda baru saja bergabung dengan tim konsultan kearsipan. Klien-klien kami membutuhkan keahlian Anda untuk menentukan **sistem penyimpanan arsip** yang tepat dan merapikan **indeks nama organisasi** mereka.
+                </p>
+            </div>
+
+            <div class="bg-desk p-4 rounded-xl border border-wood mb-6">
+                <h3 class="font-bold text-navy text-sm mb-2 flex items-center gap-2">
+                    📋 Identitas Pengguna
+                </h3>
+                <label for="input-student-name" class="block text-sm font-medium text-gray-700 mb-1">
+                    Nama Lengkap Siswa <span class="text-red-500">*</span>
+                </label>
+                <input type="text" id="input-student-name" placeholder="Masukkan nama lengkap Anda..." class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-navy focus:border-navy text-base outline-none min-h-[44px]" autocomplete="name" required>
+                <p id="welcome-error" class="text-red-600 text-xs mt-1 hidden font-medium">MOHON ISI NAMA ANDA SEBELUM MEMULAI.</p>
+            </div>
+
+            <div class="bg-blue-50 border-l-4 border-navy p-4 rounded-r-lg mb-6 text-sm text-blue-900 leading-relaxed">
+                <p class="font-bold mb-1">ℹ️ Ketentuan Kinerja Arsiparis:</p>
+                <ul class="list-disc list-inside space-y-1 text-xs sm:text-sm text-blue-800">
+                    <li>Setiap keputusan pertama Anda akan dicatat untuk evaluasi ketepatan (Target ≥ 80%).</li>
+                    <li>Gunakan **Buku Aturan Indeks** di bagian atas untuk membantu memecah kata.</li>
+                    <li>Selesaikan 2 Kasus Klien dan 1 Tantangan Akhir secara mandiri.</li>
+                </ul>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button onclick="startChallenge()" class="flex-1 bg-accent hover:bg-accentHover text-white font-extrabold text-lg py-4 px-6 rounded-xl shadow-lg transition transform active:scale-98 flex items-center justify-center gap-2 min-h-[52px] focus:ring-4 focus:ring-amber-300">
+                    🚀 Mulai Tantangan Kearsipan
+                </button>
+                <button onclick="openTeacherLoginModal()" class="bg-slate-100 hover:bg-slate-200 text-navy font-bold text-sm py-4 px-5 rounded-xl border border-slate-300 transition flex items-center justify-center gap-1.5 min-h-[52px]">
+                    🔑 Login Guru
+                </button>
+            </div>
+        </section>
+
+
+        <!-- ================= 2. SCREEN: GAMEPLAY ================= -->
+        <section id="screen-game" class="hidden flex-col gap-6">
+
+            <!-- Progress & Case Header Tab -->
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b-2 border-wood pb-2">
+                <div class="flex items-center space-x-2">
+                    <span id="case-badge" class="bg-navy text-white text-xs font-bold px-3 py-1.5 rounded-t-lg tracking-wider uppercase folder-tab">
+                        KASUS 1 DARI 3
+                    </span>
+                    <span id="stage-badge" class="bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold px-2.5 py-1 rounded-full">
+                        TAHAP A: ANALISIS SISTEM
+                    </span>
+                </div>
+                <div class="text-xs text-gray-500 font-medium">
+                    Tahap Pembelajaran Aktif
+                </div>
+            </div>
+
+            <!-- Client File Folder Card -->
+            <div id="case-container" class="bg-white rounded-2xl shadow-md border border-gray-300 overflow-hidden relative">
+                
+                <!-- Folder Header -->
+                <div class="bg-wood/50 px-6 py-4 border-b border-wood flex justify-between items-start flex-wrap gap-2">
+                    <div>
+                        <span class="text-xs font-bold text-gray-500 tracking-wider uppercase">Berkas Rekam Klien:</span>
+                        <h2 id="client-name" class="text-xl sm:text-2xl font-black text-navy leading-tight">
+                            PT Maju Bersama Sejahtera
+                        </h2>
+                    </div>
+                    <div id="stamp-display" class="hidden font-black px-3 py-1 rounded text-sm uppercase tracking-widest">
+                        <!-- Rubber Stamp injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Case Details Layout: Split View (Memo Sticky Note & Description) -->
+                <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    <!-- Client Description -->
+                    <div class="md:col-span-2 space-y-4">
+                        <div class="bg-desk/60 p-4 rounded-xl border border-wood">
+                            <h3 class="font-bold text-navy text-xs uppercase tracking-wider mb-1"> Profil & Karakteristik Usaha:</h3>
+                            <p id="client-profile" class="text-sm sm:text-base text-gray-700 leading-relaxed">
+                                <!-- Profile content -->
+                            </p>
+                        </div>
+
+                        <div class="bg-blue-50/70 p-4 rounded-xl border border-blue-200">
+                            <h3 class="font-bold text-blue-900 text-xs uppercase tracking-wider mb-1"> Volume Dokumen & Kebiasaan Temu Balik:</h3>
+                            <p id="client-retrieval" class="text-sm sm:text-base text-blue-950 font-medium leading-relaxed">
+                                <!-- Retrieval habit -->
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Pimpinan Note Sticky Note -->
+                    <div class="md:col-span-1">
+                        <div class="bg-sticky border-2 border-stickyBorder p-4 rounded-lg shadow-md transform rotate-1 relative transition hover:rotate-0">
+                            <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-4 bg-red-200/80 rounded opacity-80 border border-red-300"></div>
+                            <h4 class="font-bold text-amber-900 text-xs uppercase tracking-wider mb-2 border-b border-amber-300 pb-1">
+                                📌 Catatan Pimpinan Klien:
+                            </h4>
+                            <p id="boss-note" class="text-xs sm:text-sm font-handwriting text-amber-950 font-semibold leading-relaxed">
+                                <!-- Boss Note -->
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="border-gray-200">
+
+                <!-- Dynamic Workspace Area (Stage A or Stage B) -->
+                <div id="workspace-area" class="p-6 bg-desk/30">
+                    <!-- Dynamic Content Injected Here -->
+                </div>
+            </div>
+
+            <!-- Scaffolding Feedback Box -->
+            <div id="feedback-box" class="hidden p-5 rounded-xl border-2 shadow-lg transition-all">
+                <!-- Feedback injected via JS -->
+            </div>
+
+            <!-- Action Buttons Footer -->
+            <div id="game-footer-actions" class="flex justify-between items-center flex-wrap gap-3">
+                <button id="btn-prev-step" onclick="handleRetry()" class="hidden bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold px-5 py-3 rounded-lg text-sm transition min-h-[44px]">
+                    🔄 Coba Lagi
+                </button>
+                <div class="ml-auto flex gap-3">
+                    <button id="btn-submit-stage" onclick="submitCurrentStage()" class="bg-accent hover:bg-accentHover text-white font-extrabold px-6 py-3 rounded-lg shadow transition min-h-[44px] flex items-center gap-2">
+                        <span>Periksa Jawaban</span> ➔
+                    </button>
+                    <button id="btn-next-stage" onclick="nextStageOrCase()" class="hidden bg-navy hover:bg-navyDark text-white font-extrabold px-6 py-3 rounded-lg shadow transition min-h-[44px] flex items-center gap-2">
+                        <span>Lanjut Tahap Berikutnya</span> ➔
+                    </button>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= 3. SCREEN: INDIVIDUAL EVALUATION DASHBOARD ================= -->
+        <section id="screen-dashboard" class="hidden bg-white rounded-2xl shadow-xl border-2 border-wood p-6 sm:p-10 max-w-4xl mx-auto w-full">
+            
+            <div class="border-b-2 border-navy pb-4 mb-6 flex flex-wrap justify-between items-end gap-3">
+                <div>
+                    <span class="bg-green-100 text-green-800 font-bold text-xs px-3 py-1 rounded-full uppercase tracking-wider border border-green-300">
+                        Laporan Evaluasi Pembelajaran
+                    </span>
+                    <h2 class="text-2xl sm:text-3xl font-black text-navy mt-1">Hasil Belajar Siswa</h2>
+                    <p class="text-sm text-gray-600">Arsiparis Muda Challenge — Program Keahlian MPLB</p>
+                </div>
+                <div class="text-right text-xs text-gray-500">
+                    <p>Tanggal: <span id="report-date" class="font-bold text-gray-700">-</span></p>
+                    <p>Siswa: <span id="report-student-name" class="font-bold text-navy text-sm block sm:inline">-</span></p>
+                </div>
+            </div>
+
+            <!-- Performance Metrics Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                
+                <!-- Metric 1: System Analysis Accuracy -->
+                <div class="bg-desk/50 p-5 rounded-xl border border-wood flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="font-bold text-navy text-sm uppercase tracking-wider">1. Analisis Sistem Penyimpanan</h3>
+                            <span id="badge-status-system" class="text-xs font-bold px-2.5 py-1 rounded-full">
+                                STATUS
+                            </span>
+                        </div>
+                        <div class="flex items-baseline space-x-2 mb-2">
+                            <span id="metric-system-percent" class="text-4xl font-black text-navy">0%</span>
+                            <span id="metric-system-fraction" class="text-xs font-semibold text-gray-500">(0 dari 3 benar pada percobaan pertama)</span>
+                        </div>
+                        
+                        <!-- Progress bar -->
+                        <div class="w-full bg-gray-200 h-3 rounded-full overflow-hidden mb-3">
+                            <div id="bar-system-percent" class="bg-navy h-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <p id="detail-system-eval" class="text-xs text-gray-600 border-t border-gray-200 pt-2">
+                        Rincian per kasus diukur dari keputusan pertama.
+                    </p>
+                </div>
+
+                <!-- Metric 2: Indexing Rules Accuracy -->
+                <div class="bg-desk/50 p-5 rounded-xl border border-wood flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="font-bold text-navy text-sm uppercase tracking-wider">2. Aturan Mengindeks Nama</h3>
+                            <span id="badge-status-index" class="text-xs font-bold px-2.5 py-1 rounded-full">
+                                STATUS
+                            </span>
+                        </div>
+                        <div class="flex items-baseline space-x-2 mb-2">
+                            <span id="metric-index-percent" class="text-4xl font-black text-navy">0%</span>
+                            <span id="metric-index-fraction" class="text-xs font-semibold text-gray-500">(0 dari 14 unit benar pada percobaan pertama)</span>
+                        </div>
+                        
+                        <!-- Progress bar -->
+                        <div class="w-full bg-gray-200 h-3 rounded-full overflow-hidden mb-3">
+                            <div id="bar-index-percent" class="bg-amber-600 h-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <p id="detail-index-eval" class="text-xs text-gray-600 border-t border-gray-200 pt-2">
+                        Dihitung dari penempatan unit indeks pada ketiga nama badan.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Final Challenge Independence Level -->
+            <div class="bg-blue-50 border-2 border-navy/20 p-5 rounded-xl mb-8">
+                <h3 class="font-bold text-navy text-sm uppercase tracking-wider mb-2 flex items-center gap-2">
+                    🎯 Kemandirian di Tantangan Akhir (RS Harapan Sehat)
+                </h3>
+                <div class="flex items-center space-x-4">
+                    <span id="badge-independence" class="text-base font-extrabold px-4 py-2 rounded-lg text-white bg-navy">
+                        Tingkat Kemandirian
+                    </span>
+                    <p id="desc-independence" class="text-sm text-blue-900 font-medium">
+                        Evaluasi kemampuan transfer pengetahuan tanpa petunjuk.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Error Pattern Analysis & Teacher Recommendations -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                
+                <!-- Common Error Log -->
+                <div class="border border-gray-200 rounded-xl p-4 bg-white">
+                    <h4 class="font-bold text-gray-800 text-xs uppercase tracking-wider mb-3 flex items-center gap-1">
+                        ⚠️ Ringkasan Pola Kesalahan Siswa:
+                    </h4>
+                    <ul id="list-frequent-errors" class="text-xs space-y-2 text-gray-700 list-disc list-inside">
+                        <!-- Injected via JS -->
+                    </ul>
+                </div>
+
+                <!-- Automated Teacher Recommendation -->
+                <div class="border border-amber-200 bg-amber-50/60 rounded-xl p-4">
+                    <h4 class="font-bold text-amber-900 text-xs uppercase tracking-wider mb-3 flex items-center gap-1">
+                        💡 Rekomendasi Tindak Lanjut Guru:
+                    </h4>
+                    <p id="teacher-recommendation" class="text-xs text-amber-950 font-medium leading-relaxed">
+                        <!-- Injected via JS -->
+                    </p>
+                </div>
+            </div>
+
+            <!-- Dashboard Action Footer -->
+            <div class="flex flex-wrap justify-between items-center gap-4 pt-4 border-t border-gray-200 no-print">
+                <button onclick="resetApp()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold px-5 py-3 rounded-lg text-sm transition min-h-[44px]">
+                    🔄 Main Ulang / Reset
+                </button>
+                <div class="flex gap-2">
+                    <button id="btn-back-to-teacher-portal" onclick="showTeacherPortal()" class="hidden bg-amber-500 hover:bg-amber-600 text-navy font-extrabold px-5 py-3 rounded-lg shadow text-sm transition min-h-[44px]">
+                        ⬅️ Kembali ke Portal Guru
+                    </button>
+                    <button onclick="window.print()" class="bg-navy hover:bg-navyDark text-white font-extrabold px-6 py-3 rounded-lg shadow transition min-h-[44px] flex items-center gap-2">
+                        🖨️ Cetak / Simpan PDF
+                    </button>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= 4. SCREEN: TEACHER MONITORING PORTAL ================= -->
+        <section id="screen-teacher-portal" class="hidden bg-white rounded-2xl shadow-xl border-2 border-amber-500 p-6 sm:p-10 max-w-5xl mx-auto w-full">
+            <div class="border-b-2 border-amber-500 pb-4 mb-6 flex flex-wrap justify-between items-center gap-4">
+                <div>
+                    <span class="bg-amber-100 text-amber-900 font-extrabold text-xs px-3 py-1 rounded-full uppercase tracking-wider border border-amber-300">
+                        🔑 Akses Khusus Pendidik / Instruktur
+                    </span>
+                    <h2 class="text-2xl sm:text-3xl font-black text-navy mt-1">Portal Pemantauan Progres Siswa</h2>
+                    <p class="text-sm text-gray-600">Rekapitulasi Hasil Latihan Kearsipan SMK MPLB</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="exportTeacherDataCSV()" class="bg-green-700 hover:bg-green-800 text-white font-bold px-4 py-2.5 rounded-lg text-xs transition flex items-center gap-1 shadow">
+                        📥 Ekspor Rekap (CSV)
+                    </button>
+                    <button onclick="resetApp()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-4 py-2.5 rounded-lg text-xs transition">
+                        🚪 Keluar Mode Guru
+                    </button>
+                </div>
+            </div>
+
+            <!-- Class Statistics Summary Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center">
+                    <span class="text-xs font-bold text-blue-700 uppercase">Total Siswa Selesai</span>
+                    <p id="portal-stat-total" class="text-3xl font-black text-navy mt-1">0</p>
+                </div>
+                <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl text-center">
+                    <span class="text-xs font-bold text-amber-800 uppercase">Rata-Rata Sistem</span>
+                    <p id="portal-stat-avg-system" class="text-3xl font-black text-amber-700 mt-1">0%</p>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl text-center">
+                    <span class="text-xs font-bold text-emerald-800 uppercase">Rata-Rata Indeks</span>
+                    <p id="portal-stat-avg-index" class="text-3xl font-black text-emerald-700 mt-1">0%</p>
+                </div>
+                <div class="bg-purple-50 border border-purple-200 p-4 rounded-xl text-center">
+                    <span class="text-xs font-bold text-purple-800 uppercase">Siswa Mandiri</span>
+                    <p id="portal-stat-independent" class="text-3xl font-black text-purple-800 mt-1">0</p>
+                </div>
+            </div>
+
+            <!-- Search & Filter Controls -->
+            <div class="flex flex-wrap justify-between items-center gap-3 mb-4 bg-desk p-3 rounded-xl border border-wood">
+                <div class="flex-1 min-w-[200px]">
+                    <input type="text" id="teacher-search-input" onkeyup="filterTeacherTable()" placeholder="🔍 Cari nama siswa..." class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-navy">
+                </div>
+                <div class="flex items-center gap-2 text-xs font-medium text-gray-700">
+                    <span>Tampilkan:</span>
+                    <select id="teacher-filter-status" onchange="filterTeacherTable()" class="px-3 py-2 rounded-lg border border-gray-300 bg-white focus:outline-none">
+                        <option value="ALL">Semua Tingkat Kemandirian</option>
+                        <option value="Mandiri">Mandiri</option>
+                        <option value="Sebagian Mandiri">Sebagian Mandiri</option>
+                        <option value="Perlu Bantuan">Perlu Bantuan</option>
+                    </select>
+                    <button onclick="clearAllStudentRecords()" class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded-lg border border-red-300 font-bold transition">
+                        🗑️ Hapus Semua Rekap
+                    </button>
+                </div>
+            </div>
+
+            <!-- Student Records Table -->
+            <div class="overflow-x-auto border border-gray-200 rounded-xl mb-6 bg-white">
+                <table class="w-full text-left text-xs sm:text-sm">
+                    <thead class="bg-navy text-white font-bold uppercase tracking-wider border-b border-navy">
+                        <tr>
+                            <th class="p-3">No</th>
+                            <th class="p-3">Nama Siswa</th>
+                            <th class="p-3">Waktu Selesai</th>
+                            <th class="p-3 text-center">Akurasi Sistem</th>
+                            <th class="p-3 text-center">Akurasi Indeks</th>
+                            <th class="p-3 text-center">Kemandirian</th>
+                            <th class="p-3 text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teacher-records-table-body" class="divide-y divide-gray-200">
+                        <!-- Injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-xs text-blue-900 flex justify-between items-center">
+                <p>💡 <strong>Petunjuk Guru:</strong> Klik tombol <strong>"🔍 Lihat Detail"</strong> pada tabel untuk memeriksa laporan rinci dan pola kesalahan spesifik yang dialami oleh siswa tersebut.</p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ================= MODALS & OVERLAYS ================= -->
+
+    <!-- Modal 0: Teacher Login Modal -->
+    <div id="modal-teacher-login" class="fixed inset-0 bg-navyDark/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" role="dialog" aria-labelledby="teacher-login-title" aria-modal="true">
+        <div class="bg-white rounded-2xl shadow-2xl border-2 border-amber-500 max-w-md w-full overflow-hidden">
+            <div class="bg-navy text-white px-6 py-4 flex justify-between items-center border-b-4 border-amber-500">
+                <h3 id="teacher-login-title" class="font-extrabold text-lg flex items-center gap-2">
+                    🔑 Otentikasi Mode Guru
+                </h3>
+                <button onclick="closeTeacherLoginModal()" class="text-white hover:text-amber-200 text-2xl font-bold p-1 min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Tutup modal">
+                    ✕
+                </button>
+            </div>
+            <form onsubmit="handleTeacherLogin(event)" class="p-6 space-y-4 text-sm text-gray-700">
+                <p class="text-xs text-gray-600 leading-relaxed">
+                    Masukkan Kata Sandi / PIN Pengajar untuk membuka Portal Pemantauan Hasil Belajar seluruh siswa.
+                </p>
+
+                <div>
+                    <label for="input-teacher-pin" class="block font-bold text-navy text-xs uppercase tracking-wider mb-1">
+                        PIN / Password Guru:
+                    </label>
+                    <input type="password" id="input-teacher-pin" placeholder="Masukkan PIN Guru..." class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-navy focus:border-navy text-base outline-none min-h-[44px]" required autocomplete="current-password">
+                    <p id="teacher-pin-error" class="text-red-600 text-xs font-bold mt-1.5 hidden">
+                        ⚠️ PIN/Password salah! Coba lagi (PIN Default: 1234).
+                    </p>
+                </div>
+
+                <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 text-xs text-amber-900">
+                    💡 <strong>PIN Standar Demo:</strong> <code class="font-bold bg-amber-200 px-1 rounded">1234</code>
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeTeacherLoginModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold px-4 py-2.5 rounded-lg text-sm min-h-[44px]">
+                        Batal
+                    </button>
+                    <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-navy font-extrabold px-6 py-2.5 rounded-lg text-sm shadow min-h-[44px]">
+                        Masuk Portal Guru ➔
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 1: Index Rule Book (Buku Aturan Indeks) -->
+    <div id="modal-rulebook" class="fixed inset-0 bg-navyDark/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" role="dialog" aria-labelledby="rulebook-title" aria-modal="true">
+        <div class="bg-white rounded-2xl shadow-2xl border-2 border-amber-500 max-w-xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="bg-amber-600 text-white px-6 py-4 flex justify-between items-center">
+                <h3 id="rulebook-title" class="font-extrabold text-lg flex items-center gap-2">
+                    📖 Buku Aturan Mengindeks Nama Badan / Organisasi
+                </h3>
+                <button onclick="closeRulebookModal()" class="text-white hover:text-amber-200 text-2xl font-bold p-1 min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Tutup modal">
+                    ✕
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-4 text-sm text-gray-700 leading-relaxed">
+                <div class="p-3 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-900 font-medium">
+                    📌 Gunakan 4 kaidah standar kearsipan ini saat menyusun kartu unit indeks:
+                </div>
+
+                <ol class="list-decimal list-inside space-y-3 font-medium">
+                    <li class="bg-desk p-3 rounded-lg border border-wood">
+                        <strong class="text-navy">Kaidah 1: Urutan Kata</strong><br>
+                        <span class="text-xs text-gray-600">
+                            Setiap kata pada nama badan usaha/organisasi menjadi satu unit indeks sesuai urutan penulisan aslinya.
+                        </span>
+                    </li>
+                    <li class="bg-desk p-3 rounded-lg border border-wood">
+                        <strong class="text-navy">Kaidah 2: Bentuk Badan Hukum / Usaha</strong><br>
+                        <span class="text-xs text-gray-600">
+                            Bentuk badan usaha seperti **PT, CV, UD, Firma** ditempatkan pada **unit terakhir**. Contoh: *PT Maju* &rarr; Unit 1: Maju, Unit 2: PT.
+                        </span>
+                    </li>
+                    <li class="bg-desk p-3 rounded-lg border border-wood">
+                        <strong class="text-navy">Kaidah 3: Kata Sambung & Tanda Baca</strong><br>
+                        <span class="text-xs text-gray-600">
+                            Kata sambung (*dan, di, ke, dari, untuk, &*) serta tanda baca **TIDAK DIINDEKS** (dipindahkan ke kotak "Tidak diindeks").
+                        </span>
+                    </li>
+                    <li class="bg-desk p-3 rounded-lg border border-wood">
+                        <strong class="text-navy">Kaidah 4: Singkatan & Akronim</strong><br>
+                        <span class="text-xs text-gray-600">
+                            Singkatan nama atau akronim resmi dihitung sebagai **satu unit utuh**.
+                        </span>
+                    </li>
+                </ol>
+            </div>
+            <div class="bg-gray-100 px-6 py-3 border-t border-gray-200 text-right">
+                <button onclick="closeRulebookModal()" class="bg-navy hover:bg-navyDark text-white font-bold px-5 py-2.5 rounded-lg text-sm min-h-[44px]">
+                    Tutup & Pahami
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: General Help & Guidelines -->
+    <div id="modal-help" class="fixed inset-0 bg-navyDark/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" role="dialog" aria-labelledby="help-title" aria-modal="true">
+        <div class="bg-white rounded-2xl shadow-2xl border border-gray-300 max-w-md w-full p-6 text-sm">
+            <h3 id="help-title" class="font-bold text-navy text-lg mb-3 flex items-center gap-2">
+                ❓ Petunjuk Cara Bermain
+            </h3>
+            <ul class="list-disc list-inside space-y-2 text-gray-700 text-xs sm:text-sm leading-relaxed mb-6">
+                <li><strong>Tahap Analisis Sistem:</strong> Tinjau profil klien dan catatan pimpinan. Pilih 1 sistem penyimpanan dan 1 alasan yang paling efisien.</li>
+                <li><strong>Tahap Perbaiki Indeks:</strong> Ketuk/klik kartu kata untuk menempatkannya secara berurutan ke Unit 1, Unit 2, dst., atau ke kotak "Tidak diindeks". Ketuk kembali kartu yang terpasang jika ingin membatalkannya.</li>
+                <li>Setiap tahap latihan memberi Anda 2 kali kesempatan periksa.</li>
+                <li><strong>Tantangan Akhir:</strong> Tidak ada Buku Aturan dan hanya 1 kali kesempatan!</li>
+            </ul>
+            <button onclick="closeHelpModal()" class="w-full bg-navy text-white font-bold py-3 rounded-lg min-h-[44px]">
+                Mengerti
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript Game Engine & Teacher Monitoring -->
+    <script>
+        
+        // App State
+        const state = {
+            studentName: '',
+            currentCaseIndex: 0, // 0: Case 1, 1: Case 2, 2: Final Challenge
+            currentStage: 'A',   // 'A' (System Analysis), 'B' (Index Rules)
+            isTeacherViewing: false, // Flag when teacher inspects student report
+            
+            // Tracking for calculation (First Attempt Only)
+            metrics: {
+                systemFirstAttempts: [null, null, null], // true/false per case
+                indexFirstAttempts: [
+                    [null, null, null, null],              // Case 1 (4 decisions)
+                    [null, null, null, null, null],        // Case 2 (5 decisions)
+                    [null, null, null, null, null]         // Case 3 (5 decisions)
+                ],
+                totalTries: {
+                    c1a: 0, c1b: 0,
+                    c2a: 0, c2b: 0,
+                    c3a: 0, c3b: 0
+                },
+                hintsUsed: 0,
+                errorLogs: []
+            },
+
+            // Current Stage User Selections
+            selectedSystem: null,
+            selectedReason: null,
+            indexPlacements: {}, // cardId -> slotName ('unit1', 'unit2', ..., 'none')
+            
+            // Lock states
+            stageTries: 0,
+            stagePassed: false
+        };
+
+        // Static Database of Cases
+        const casesData = [
+            // KASUS 1
+            {
+                id: 1,
+                clientName: "PT Maju Bersama Sejahtera",
+                profile: "Distributor peralatan kantor dan alat tulis yang melayani sekitar 300 toko pelanggan tetap di berbagai kota.",
+                retrieval: "Staf administrasi selalu mencari berkas rekam transaksi atau korespondensi berdasarkan NAMA PELANGGAN.",
+                bossNote: "“Staf saya mengeluh sering salah ambil berkas! Kami butuh sistem yang paling cepat untuk mencari file berdasarkan nama toko pelanggan.”",
+                stageA: {
+                    correctSystem: "Abjad",
+                    correctReason: "Sebab berkas dicari berdasarkan nama pelanggan secara alfabetis, sehingga staf dapat langsung menuju folder tanpa melihat indeks nomor/tanggal.",
+                    systems: ["Abjad", "Tanggal", "Subjek", "Wilayah", "Nomor"],
+                    reasons: [
+                        { text: "Sebab berkas dicari berdasarkan nama pelanggan secara alfabetis, sehingga staf dapat langsung menuju folder tanpa melihat indeks nomor/tanggal.", correct: true },
+                        { text: "Sebab jumlah pelanggan 300 toko tergolong sangat banyak sehingga harus urut tanggal.", correct: false, code: "a" },
+                        { text: "Sebab transaksi terjadi setiap hari sehingga lebih rapi disusun berdasarkan waktu.", correct: false, code: "b" }
+                    ],
+                    consequences: {
+                        "Tanggal": "Akibatnya: Staf kebingungan dan butuh waktu 15 menit per berkas karena harus mengingat tanggal transaksi pelanggan saat ingin mencari berkasnya!",
+                        "Wilayah": "Akibatnya: Banyak pelanggan dari kota yang sama menumpuk di laci yang sama tanpa urutan nama yang jelas.",
+                        "Subjek": "Akibatnya: Klasifikasi perihal terlalu rumit padahal yang dicari selalu nama toko pelanggan.",
+                        "Nomor": "Akibatnya: Staf harus selalu membuka buku indeks nomor terlebih dahulu sebelum mengambil berkas nama toko."
+                    },
+                    hint1: "💡 Petunjuk: Perhatikan cara staf mencari berkas. Mereka mencari berdasarkan NAMA PELANGGAN, bukan tanggal transaksi. Pilih sistem yang mengurutkan huruf nama pelanggan secara langsung.",
+                    hint2Full: "📌 Analisis Tepat: Sistem Abjad. Alasan: Karena pencarian utama dilakukan berdasarkan nama pelanggan. Menggunakan sistem tanggal akan memaksa staf mengingat tanggal transaksi terlebih dahulu."
+                },
+                stageB: {
+                    draftWrong: "PT Maju Bersama Sejahtera (Draf Staf: PT ditaruh di depan)",
+                    cards: [
+                        { id: "c1_pt", text: "PT" },
+                        { id: "c1_maju", text: "Maju" },
+                        { id: "c1_bersama", text: "Bersama" },
+                        { id: "c1_sejahtera", text: "Sejahtera" }
+                    ],
+                    slots: ["unit1", "unit2", "unit3", "unit4"],
+                    correctMapping: {
+                        "unit1": "c1_maju",
+                        "unit2": "c1_bersama",
+                        "unit3": "c1_sejahtera",
+                        "unit4": "c1_pt"
+                    },
+                    hint1: "💡 Petunjuk Indeks: Sesuai Kaidah 2 Buku Aturan, di manakah posisi bentuk badan usaha (PT) seharusnya berada?",
+                    hint2Full: "📌 Penjelasan Indeks Tepat: Unit 1: Maju | Unit 2: Bersama | Unit 3: Sejahtera | Unit 4: PT. (Bentuk badan usaha PT selalu dipindahkan ke unit terakhir)."
+                }
+            },
+
+            // KASUS 2
+            {
+                id: 2,
+                clientName: "CV Karya Utama dan Rekan",
+                profile: "Kantor konsultan jasa administrasi yang menerima puluhan surat masuk dan keluar setiap hari kerja.",
+                retrieval: "Pimpinan kantor sering meminta berkas dengan instruksi: 'Tolong ambilkan semua surat masuk minggu ini' atau 'surat bulan lalu'.",
+                bossNote: "“Saya tidak ingat nama pengirim suratnya satu per satu, tapi saya ingat persis kapan surat itu masuk ke meja saya!”",
+                stageA: {
+                    correctSystem: "Tanggal",
+                    correctReason: "Sebab pimpinan selalu meminta dokumen berdasarkan periode waktu (kronologis), sehingga penyusunan sesuai urutan tanggal paling efisien.",
+                    systems: ["Abjad", "Tanggal", "Subjek", "Wilayah", "Nomor"],
+                    reasons: [
+                        { text: "Sebab pimpinan selalu meminta dokumen berdasarkan periode waktu (kronologis), sehingga penyusunan sesuai urutan tanggal paling efisien.", correct: true },
+                        { text: "Sebab surat masuk berasal dari nama perusahaan yang beraneka ragam.", correct: false, code: "b" },
+                        { text: "Sebab penyusunan tanggal adalah sistem yang paling dikenal dan paling sederhana.", correct: false, code: "c" }
+                    ],
+                    consequences: {
+                        "Abjad": "Akibatnya: Staf harus membongkar seluruh laci dari A-Z hanya untuk mengumpulkan surat-surat yang diterima minggu lalu!",
+                        "Subjek": "Akibatnya: Surat-surat dari minggu lalu tersebar di berbagai kelompok perihal yang berbeda.",
+                        "Wilayah": "Akibatnya: Penyusunan kota pengirim tidak membantu pimpinan yang mencari surat berdasarkan kurun waktu.",
+                        "Nomor": "Akibatnya: Staf kesulitan membuat urutan nomor untuk surat-surat dari pimpinan."
+                    },
+                    hint1: "💡 Petunjuk: Pimpinan mencari berkas berdasarkan PERIODE WAKTU (minggu ini / bulan lalu). Pilih sistem penyusunan berdasarkan urutan waktu (kronologis).",
+                    hint2Full: "📌 Analisis Tepat: Sistem Tanggal. Alasan: Permintaan berkas berbasis periode waktu sangat cocok diselesaikan dengan sistem kronologis (Tanggal)."
+                },
+                stageB: {
+                    draftWrong: "CV Karya Utama dan Rekan (Draf Staf: CV di depan & kata 'dan' ikut diindeks)",
+                    cards: [
+                        { id: "c2_cv", text: "CV" },
+                        { id: "c2_karya", text: "Karya" },
+                        { id: "c2_utama", text: "Utama" },
+                        { id: "c2_dan", text: "dan" },
+                        { id: "c2_rekan", text: "Rekan" }
+                    ],
+                    slots: ["unit1", "unit2", "unit3", "unit4", "none"],
+                    correctMapping: {
+                        "unit1": "c2_karya",
+                        "unit2": "c2_utama",
+                        "unit3": "c2_rekan",
+                        "unit4": "c2_cv",
+                        "none": "c2_dan"
+                    },
+                    hint1: "💡 Petunjuk Indeks: Periksa Kaidah 2 (posisi CV) dan Kaidah 3 (apakah kata sambung 'dan' boleh diindeks?).",
+                    hint2Full: "📌 Penjelasan Indeks Tepat: Unit 1: Karya | Unit 2: Utama | Unit 3: Rekan | Unit 4: CV. (Kata sambung 'dan' TIDAK diindeks)."
+                }
+            },
+
+            // TANTANGAN AKHIR (KASUS 3)
+            {
+                id: 3,
+                clientName: "PT Rumah Sakit Harapan Sehat",
+                profile: "Rumah sakit daerah dengan puluhan ribu rekam medis pasien. Banyak sekali pasien yang memiliki nama yang sama (seperti 'Siti Aminah' atau 'Budi Santoso').",
+                retrieval: "Setiap pasien yang berobat diberikan nomor rekam medis unik. Petugas unit gawat darurat harus menemukan berkas rekam medis dalam waktu kurang dari 1 menit.",
+                bossNote: "“TANTANGAN AKHIR: Jika kami menggunakan nama pasien, sering tertukar karena namanya sama! Kami butuh sistem dengan akurasi 100% dan pencarian sangat cepat.”",
+                stageA: {
+                    correctSystem: "Nomor",
+                    correctReason: "Sebab jumlah berkas sangat masif dan terdapat banyak kesamaan nama pasien, sehingga identifikasi unik nomor rekam medis paling akurat dan mencegah tertukar.",
+                    systems: ["Abjad", "Tanggal", "Subjek", "Wilayah", "Nomor"],
+                    reasons: [
+                        { text: "Sebab jumlah berkas sangat masif dan terdapat banyak kesamaan nama pasien, sehingga identifikasi unik nomor rekam medis paling akurat dan mencegah tertukar.", correct: true },
+                        { text: "Sebab nama rumah sakit diawali dengan kata 'Rumah' sehingga cocok dengan nomor.", correct: false, code: "d" },
+                        { text: "Sebab sistem nomor paling disukai oleh semua staf rumah sakit.", correct: false, code: "c" }
+                    ]
+                },
+                stageB: {
+                    draftWrong: "PT Rumah Sakit Harapan Sehat",
+                    cards: [
+                        { id: "c3_pt", text: "PT" },
+                        { id: "c3_rumah", text: "Rumah" },
+                        { id: "c3_sakit", text: "Sakit" },
+                        { id: "c3_harapan", text: "Harapan" },
+                        { id: "c3_sehat", text: "Sehat" }
+                    ],
+                    slots: ["unit1", "unit2", "unit3", "unit4", "unit5"],
+                    correctMapping: {
+                        "unit1": "c3_rumah",
+                        "unit2": "c3_sakit",
+                        "unit3": "c3_harapan",
+                        "unit4": "c3_sehat",
+                        "unit5": "c3_pt"
+                    }
+                }
+            }
+        ];
+
+        // Sample initial student records if localStorage is empty
+        const initialSampleRecords = [
+            {
+                id: "rec_101",
+                studentName: "Ahmad Fauzi",
+                timestamp: "2026-09-28 09:15",
+                sysPercent: 100,
+                sysCorrectCount: 3,
+                indexPercent: 92,
+                indexCorrectCount: 13,
+                independenceLevel: "Mandiri",
+                errorLogs: ["Kasus 2 (Indeks): Susunan unit indeks belum presisi."],
+                metrics: {
+                    systemFirstAttempts: [true, true, true],
+                    indexFirstAttempts: [
+                        [true, true, true, true],
+                        [true, true, false, true, true],
+                        [true, true, true, true, true]
+                    ]
+                }
+            },
+            {
+                id: "rec_102",
+                studentName: "Siti Rahmawati",
+                timestamp: "2026-09-28 10:30",
+                sysPercent: 67,
+                sysCorrectCount: 2,
+                indexPercent: 78,
+                indexCorrectCount: 11,
+                independenceLevel: "Sebagian Mandiri",
+                errorLogs: [
+                    "Kasus 1 (Sistem): Memilih Tanggal padahal seharusnya Abjad",
+                    "Kasus 2 (Indeks): Susunan unit indeks belum presisi."
+                ],
+                metrics: {
+                    systemFirstAttempts: [false, true, true],
+                    indexFirstAttempts: [
+                        [true, true, true, false],
+                        [true, false, true, true, true],
+                        [true, true, true, true, true]
+                    ]
+                }
+            }
+        ];
+
+
+        // Helper: Announce text to screen reader
+        function announce(text) {
+            const announcer = document.getElementById('aria-announcer');
+            if (announcer) announcer.innerText = text;
+        }
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('welcome-error').classList.add('hidden');
+            initLocalStorageData();
+        });
+
+        function initLocalStorageData() {
+            if (!localStorage.getItem('arsiparis_student_records')) {
+                localStorage.setItem('arsiparis_student_records', JSON.stringify(initialSampleRecords));
+            }
+        }
+
+        function getSavedRecords() {
+            try {
+                return JSON.parse(localStorage.getItem('arsiparis_student_records')) || [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveStudentRecord(record) {
+            const records = getSavedRecords();
+            records.unshift(record); // newest first
+            localStorage.setItem('arsiparis_student_records', JSON.stringify(records));
+        }
+
+
+        // Start Challenge
+        function startChallenge() {
+            const nameInput = document.getElementById('input-student-name').value.trim();
+            if (!nameInput) {
+                document.getElementById('welcome-error').classList.remove('hidden');
+                document.getElementById('input-student-name').focus();
+                return;
+            }
+
+            state.studentName = nameInput;
+            document.getElementById('display-student-name').innerText = `Siswa: ${nameInput}`;
+            
+            // Hide Welcome, Show Gameplay
+            document.getElementById('screen-welcome').classList.add('hidden');
+            document.getElementById('screen-teacher-portal').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+            document.getElementById('screen-game').classList.add('flex');
+            document.getElementById('header-controls').classList.remove('hidden');
+
+            // Render First Case
+            renderCase();
+        }
+
+
+        function renderCase() {
+            const caseData = casesData[state.currentCaseIndex];
+            const isFinal = (state.currentCaseIndex === 2);
+
+            // Update Header Badges
+            const caseBadge = document.getElementById('case-badge');
+            caseBadge.innerText = `KASUS ${state.currentCaseIndex + 1} DARI 3`;
+            if (isFinal) {
+                caseBadge.innerText = "🔥 TANTANGAN AKHIR";
+                caseBadge.className = "bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded-t-lg tracking-wider uppercase folder-tab";
+            } else {
+                caseBadge.className = "bg-navy text-white text-xs font-bold px-3 py-1.5 rounded-t-lg tracking-wider uppercase folder-tab";
+            }
+
+            const stageBadge = document.getElementById('stage-badge');
+            stageBadge.innerText = state.currentStage === 'A' ? "TAHAP A: ANALISIS SISTEM" : "TAHAP B: PERBAIKI INDEKS";
+
+            // Rulebook Button visibility (Disabled in final challenge)
+            const btnRulebook = document.getElementById('btn-rulebook');
+            if (isFinal) {
+                btnRulebook.classList.add('hidden');
+            } else {
+                btnRulebook.classList.remove('hidden');
+            }
+            document.getElementById('btn-help').classList.remove('hidden');
+
+            // Fill Case Info
+            document.getElementById('client-name').innerText = caseData.clientName;
+            document.getElementById('client-profile').innerText = caseData.profile;
+            document.getElementById('client-retrieval').innerText = caseData.retrieval;
+            document.getElementById('boss-note').innerText = caseData.bossNote;
+
+            // Clear Previous Feedback & Stamps
+            const feedbackBox = document.getElementById('feedback-box');
+            feedbackBox.className = "hidden p-5 rounded-xl border-2 shadow-lg transition-all";
+            feedbackBox.innerHTML = "";
+            document.getElementById('stamp-display').className = "hidden";
+
+            // Reset workspace selections
+            state.selectedSystem = null;
+            state.selectedReason = null;
+            state.indexPlacements = {};
+            state.stageTries = 0;
+            state.stagePassed = false;
+
+            // Reset action buttons
+            document.getElementById('btn-submit-stage').classList.remove('hidden');
+            document.getElementById('btn-prev-step').classList.add('hidden');
+            document.getElementById('btn-next-stage').classList.add('hidden');
+
+            // Render Stage Workspace
+            if (state.currentStage === 'A') {
+                renderStageA(caseData);
+            } else {
+                renderStageB(caseData);
+            }
+
+            announce(`Memuat Kasus ${state.currentCaseIndex + 1}, Tahap ${state.currentStage}`);
+        }
+
+
+        function renderStageA(caseData) {
+            const workspace = document.getElementById('workspace-area');
+            const stageAData = caseData.stageA;
+
+            let html = `
+                <div class="space-y-6">
+                    <div>
+                        <h3 class="font-extrabold text-navy text-base mb-1 flex items-center gap-2">
+                            1️⃣ Pilih Sistem Penyimpanan Arsip yang Paling Tepat:
+                        </h3>
+                        <p class="text-xs text-gray-600 mb-3">Pilih satu sistem penyimpanan dari 5 pilihan di bawah ini:</p>
+                        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            `;
+
+            stageAData.systems.forEach(sys => {
+                html += `
+                    <button type="button" onclick="selectSystem('${sys}')" id="btn-sys-${sys}" class="sys-option-btn bg-white hover:bg-amber-50 text-navy font-bold p-3 rounded-xl border-2 border-wood shadow-sm text-center text-sm transition min-h-[48px] focus:ring-2 focus:ring-navy">
+                        📌 Sistem ${sys}
+                    </button>
+                `;
+            });
+
+            html += `
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="font-extrabold text-navy text-base mb-1 flex items-center gap-2">
+                            2️⃣ Alasan Keputusan Analisis Anda:
+                        </h3>
+                        <p class="text-xs text-gray-600 mb-3">Mengapa sistem tersebut paling efektif untuk klien ini?</p>
+                        <div class="space-y-2.5">
+            `;
+
+            stageAData.reasons.forEach((rs, idx) => {
+                html += `
+                    <button type="button" onclick="selectReason(${idx})" id="btn-reason-${idx}" class="reason-option-btn w-full text-left bg-white hover:bg-amber-50 text-gray-800 font-medium p-3.5 rounded-xl border-2 border-wood text-xs sm:text-sm transition min-h-[48px] focus:ring-2 focus:ring-navy">
+                        <span class="font-bold text-navy">Option ${String.fromCharCode(65 + idx)}:</span> ${rs.text}
+                    </button>
+                `;
+            });
+
+            html += `
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            workspace.innerHTML = html;
+        }
+
+        function selectSystem(sys) {
+            state.selectedSystem = sys;
+            document.querySelectorAll('.sys-option-btn').forEach(btn => {
+                btn.classList.remove('bg-navy', 'text-white', 'border-navy');
+                btn.classList.add('bg-white', 'text-navy', 'border-wood');
+            });
+            const selectedBtn = document.getElementById(`btn-sys-${sys}`);
+            if (selectedBtn) {
+                selectedBtn.classList.remove('bg-white', 'text-navy', 'border-wood');
+                selectedBtn.classList.add('bg-navy', 'text-white', 'border-navy');
+            }
+            announce(`Sistem ${sys} dipilih`);
+        }
+
+        function selectReason(idx) {
+            state.selectedReason = idx;
+            document.querySelectorAll('.reason-option-btn').forEach(btn => {
+                btn.classList.remove('bg-navy/10', 'border-navy', 'font-bold');
+                btn.classList.add('bg-white', 'border-wood');
+            });
+            const selectedBtn = document.getElementById(`btn-reason-${idx}`);
+            if (selectedBtn) {
+                selectedBtn.classList.remove('bg-white', 'border-wood');
+                selectedBtn.classList.add('bg-navy/10', 'border-navy', 'font-bold');
+            }
+            announce(`Alasan opsi ${String.fromCharCode(65 + idx)} dipilih`);
+        }
+
+
+        function renderStageB(caseData) {
+            const workspace = document.getElementById('workspace-area');
+            const stageBData = caseData.stageB;
+
+            let html = `
+                <div class="space-y-6">
+                    <div class="bg-amber-50/80 p-4 rounded-xl border border-amber-300">
+                        <span class="text-xs font-bold text-amber-900 uppercase">Draf Indeks Salah dari Staf:</span>
+                        <p class="font-mono text-sm sm:text-base font-bold text-red-700 mt-0.5">
+                            "${stageBData.draftWrong}"
+                        </p>
+                        <p class="text-xs text-gray-600 mt-1">
+                            Perbaiki draf di atas dengan menempatkan kartu kata ke unit indeks yang sesuai.
+                        </p>
+                    </div>
+
+                    <!-- Available Cards Pool -->
+                    <div>
+                        <h4 class="font-bold text-navy text-xs uppercase tracking-wider mb-2">
+                            🃏 Kartu Kata Tersedia (Ketuk kartu untuk menempatkan):
+                        </h4>
+                        <div id="card-pool" class="flex flex-wrap gap-2 p-3 bg-wood/40 rounded-xl min-h-[60px] items-center">
+                            <!-- Cards rendered here -->
+                        </div>
+                    </div>
+
+                    <!-- Index Units Dropzones -->
+                    <div>
+                        <h4 class="font-bold text-navy text-xs uppercase tracking-wider mb-2">
+                            📁 Unit Indeks Kearsipan:
+                        </h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            `;
+
+            stageBData.slots.forEach(slot => {
+                let slotLabel = slot === 'none' ? '🚫 Tidak diindeks (Abaikan)' : `Unit ${slot.replace('unit', '')}`;
+                let slotBg = slot === 'none' ? 'bg-red-50/50 border-red-200' : 'bg-white border-wood';
+                
+                html += `
+                    <div class="p-3 rounded-xl border-2 ${slotBg} min-h-[80px] flex flex-col justify-between">
+                        <span class="text-xs font-extrabold text-navy uppercase tracking-wider">${slotLabel}</span>
+                        <div id="slot-zone-${slot}" class="slot-zone flex flex-wrap gap-1 mt-2 min-h-[36px]" data-slot="${slot}">
+                            <span class="text-xs text-gray-400 italic my-auto placeholder-text">[Kosong]</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            workspace.innerHTML = html;
+
+            // Render Cards into Pool initially
+            renderCardsPool(stageBData.cards);
+        }
+
+        function renderCardsPool(cards) {
+            const pool = document.getElementById('card-pool');
+            if (!pool) return;
+            pool.innerHTML = '';
+
+            cards.forEach(card => {
+                const assignedSlot = state.indexPlacements[card.id];
+                if (!assignedSlot) {
+                    const cardBtn = createCardElement(card);
+                    pool.appendChild(cardBtn);
+                }
+            });
+
+            // Update Slot Containers
+            const caseData = casesData[state.currentCaseIndex];
+            caseData.stageB.slots.forEach(slot => {
+                const slotContainer = document.getElementById(`slot-zone-${slot}`);
+                if (!slotContainer) return;
+                
+                slotContainer.innerHTML = '';
+                let hasCard = false;
+
+                cards.forEach(card => {
+                    if (state.indexPlacements[card.id] === slot) {
+                        hasCard = true;
+                        const cardBtn = createCardElement(card, true);
+                        slotContainer.appendChild(cardBtn);
+                    }
+                });
+
+                if (!hasCard) {
+                    slotContainer.innerHTML = '<span class="text-xs text-gray-400 italic my-auto placeholder-text">[Kosong]</span>';
+                }
+            });
+        }
+
+        function createCardElement(card, inSlot = false) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `px-3 py-2 rounded-lg font-bold text-sm shadow-sm transition flex items-center gap-1 min-h-[44px] ${
+                inSlot ? 'bg-navy text-white hover:bg-red-700' : 'bg-white text-navy border-2 border-amber-400 hover:bg-amber-100'
+            }`;
+            btn.innerHTML = `${card.text} ${inSlot ? '✖' : '➔'}`;
+            btn.onclick = () => handleCardClick(card.id, inSlot);
+            return btn;
+        }
+
+        function handleCardClick(cardId, inSlot) {
+            if (state.stagePassed) return;
+
+            const caseData = casesData[state.currentCaseIndex];
+            
+            if (inSlot) {
+                // Remove from slot back to pool
+                delete state.indexPlacements[cardId];
+            } else {
+                // Assign to first empty unit slot
+                const availableSlots = caseData.stageB.slots;
+                let targetSlot = null;
+
+                for (let s of availableSlots) {
+                    if (s === 'none') continue;
+                    const taken = Object.values(state.indexPlacements).includes(s);
+                    if (!taken) {
+                        targetSlot = s;
+                        break;
+                    }
+                }
+
+                // If all unit slots full, assign to 'none' (tidak diindeks)
+                if (!targetSlot && availableSlots.includes('none')) {
+                    targetSlot = 'none';
+                }
+
+                if (targetSlot) {
+                    state.indexPlacements[cardId] = targetSlot;
+                }
+            }
+
+            renderCardsPool(caseData.stageB.cards);
+            announce(`Kartu dipindahkan`);
+        }
+
+
+        function submitCurrentStage() {
+            const caseData = casesData[state.currentCaseIndex];
+            const isFinal = (state.currentCaseIndex === 2);
+
+            if (state.currentStage === 'A') {
+                evaluateStageA(caseData, isFinal);
+            } else {
+                evaluateStageB(caseData, isFinal);
+            }
+        }
+
+        // Evaluate Stage A
+        function evaluateStageA(caseData, isFinal) {
+            if (!state.selectedSystem || state.selectedReason === null) {
+                showToast("Pilih 1 sistem penyimpanan dan 1 alasan terlebih dahulu!");
+                return;
+            }
+
+            state.stageTries++;
+            const stageData = caseData.stageA;
+            const isSysCorrect = (state.selectedSystem === stageData.correctSystem);
+            const isReasonCorrect = (stageData.reasons[state.selectedReason] && stageData.reasons[state.selectedReason].correct);
+            const isBothCorrect = isSysCorrect && isReasonCorrect;
+
+            // Record First Attempt Accuracy
+            if (state.stageTries === 1) {
+                state.metrics.systemFirstAttempts[state.currentCaseIndex] = isBothCorrect;
+            }
+
+            // In Final Challenge: Lock immediately without instant feedback
+            if (isFinal) {
+                state.stagePassed = true;
+                showStamp(isBothCorrect ? "APPROVED" : "REVISION");
+                
+                // Show simple lock message & enable next
+                showFeedbackBox('info', "🔒 Jawaban Tantangan Akhir Tahap A Telah Dikunci. Pembahasan lengkap akan ditampilkan di Dasbor Guru.");
+                document.getElementById('btn-submit-stage').classList.add('hidden');
+                document.getElementById('btn-next-stage').classList.remove('hidden');
+                return;
+            }
+
+            // Normal Case Feedback Engine (Scaffolding)
+            if (isBothCorrect) {
+                state.stagePassed = true;
+                showStamp("APPROVED");
+                showFeedbackBox('success', `🎉 **Sempurna!** Pilihan Sistem ${state.selectedSystem} dan alasannya sangat tepat. ${stageData.correctReason}`);
+                
+                document.getElementById('btn-submit-stage').classList.add('hidden');
+                document.getElementById('btn-next-stage').classList.remove('hidden');
+                document.getElementById('btn-prev-step').classList.add('hidden');
+            } else {
+                showStamp("REVISION");
+                
+                // Log Error Traps
+                if (!isSysCorrect) {
+                    state.metrics.errorLogs.push(`Kasus ${caseData.id} (Sistem): Memilih ${state.selectedSystem} padahal seharusnya ${stageData.correctSystem}`);
+                }
+
+                if (state.stageTries === 1) {
+                    // Try 1 Error: Hint / Scaffolding
+                    state.metrics.hintsUsed++;
+                    let narrativeConsequence = stageData.consequences[state.selectedSystem] || "Pilihan tersebut kurang efisien untuk kebutuhan klien ini.";
+                    
+                    showFeedbackBox('warning', `⚠️ **Kurang Tepat.** <br>${narrativeConsequence}<br><br>${stageData.hint1}`);
+                    document.getElementById('btn-submit-stage').classList.add('hidden');
+                    document.getElementById('btn-prev-step').classList.remove('hidden');
+                } else {
+                    // Try 2 Error: Full Explanation + Direct Answer
+                    showFeedbackBox('error', `❌ **Belum Tepat (Batas Percobaan Habis).**<br>${stageData.hint2Full}`);
+                    document.getElementById('btn-submit-stage').classList.add('hidden');
+                    document.getElementById('btn-next-stage').classList.remove('hidden');
+                    document.getElementById('btn-prev-step').classList.add('hidden');
+                }
+            }
+        }
+
+        // Evaluate Stage B
+        function evaluateStageB(caseData, isFinal) {
+            const stageData = caseData.stageB;
+            const cardsCount = stageData.cards.length;
+            const placedCount = Object.keys(state.indexPlacements).length;
+
+            if (placedCount < cardsCount) {
+                showToast("Harap tempatkan SEMUA kartu kata ke dalam unit indeks!");
+                return;
+            }
+
+            state.stageTries++;
+            
+            // Check correctness per card
+            let allCorrect = true;
+            let correctPerCardCount = 0;
+
+            stageData.cards.forEach((card, idx) => {
+                const userSlot = state.indexPlacements[card.id];
+                let isCardSlotCorrect = false;
+
+                for (let [s, cId] of Object.entries(stageData.correctMapping)) {
+                    if (cId === card.id && userSlot === s) {
+                        isCardSlotCorrect = true;
+                        break;
+                    }
+                }
+
+                if (state.stageTries === 1) {
+                    state.metrics.indexFirstAttempts[state.currentCaseIndex][idx] = isCardSlotCorrect;
+                }
+
+                if (isCardSlotCorrect) {
+                    correctPerCardCount++;
+                } else {
+                    allCorrect = false;
+                }
+            });
+
+            // Final Challenge Lockdown
+            if (isFinal) {
+                state.stagePassed = true;
+                showStamp(allCorrect ? "APPROVED" : "REVISION");
+                showFeedbackBox('info', "🔒 Jawaban Tantangan Akhir Tahap B Telah Dikunci! Seluruh kasus selesai.");
+                document.getElementById('btn-submit-stage').classList.add('hidden');
+                document.getElementById('btn-next-stage').classList.remove('hidden');
+                return;
+            }
+
+            // Normal Case Feedback Engine
+            if (allCorrect) {
+                state.stagePassed = true;
+                showStamp("APPROVED");
+                showFeedbackBox('success', `🎉 **Luar Biasa!** Seluruh unit indeks disusun sesuai kaidah kearsipan.`);
+                
+                document.getElementById('btn-submit-stage').classList.add('hidden');
+                document.getElementById('btn-next-stage').classList.remove('hidden');
+                document.getElementById('btn-prev-step').classList.add('hidden');
+            } else {
+                showStamp("REVISION");
+                state.metrics.errorLogs.push(`Kasus ${caseData.id} (Indeks): Susunan unit indeks belum presisi.`);
+
+                if (state.stageTries === 1) {
+                    state.metrics.hintsUsed++;
+                    showFeedbackBox('warning', `⚠️ **Susunan Unit Belum Tepat.** (${correctPerCardCount} dari ${cardsCount} unit benar).<br>${stageData.hint1}`);
+                    document.getElementById('btn-submit-stage').classList.add('hidden');
+                    document.getElementById('btn-prev-step').classList.remove('hidden');
+                } else {
+                    showFeedbackBox('error', `❌ **Belum Tepat.**<br>${stageData.hint2Full}`);
+                    document.getElementById('btn-submit-stage').classList.add('hidden');
+                    document.getElementById('btn-next-stage').classList.remove('hidden');
+                    document.getElementById('btn-prev-step').classList.add('hidden');
+                }
+            }
+        }
+
+        function handleRetry() {
+            document.getElementById('feedback-box').classList.add('hidden');
+            document.getElementById('stamp-display').className = "hidden";
+            document.getElementById('btn-submit-stage').classList.remove('hidden');
+            document.getElementById('btn-prev-step').classList.add('hidden');
+        }
+
+        function nextStageOrCase() {
+            if (state.currentStage === 'A') {
+                state.currentStage = 'B';
+                renderCase();
+            } else {
+                if (state.currentCaseIndex < 2) {
+                    state.currentCaseIndex++;
+                    state.currentStage = 'A';
+                    renderCase();
+                } else {
+                    // All cases finished -> Show Dashboard
+                    finishAndSaveStudentReport();
+                }
+            }
+        }
+
+
+        function showStamp(type) {
+            const stamp = document.getElementById('stamp-display');
+            stamp.classList.remove('hidden', 'stamp-approved', 'stamp-revision');
+            
+            if (type === "APPROVED") {
+                stamp.innerText = "✓ DISETUJUI";
+                stamp.classList.add('stamp-approved');
+            } else {
+                stamp.innerText = "⚠ REVISI";
+                stamp.classList.add('stamp-revision');
+            }
+        }
+
+        function showFeedbackBox(type, message) {
+            const box = document.getElementById('feedback-box');
+            box.classList.remove('hidden', 'bg-green-50', 'border-green-400', 'text-green-950', 'bg-amber-50', 'border-amber-400', 'text-amber-950', 'bg-red-50', 'border-red-400', 'text-red-950', 'bg-blue-50', 'border-blue-400', 'text-blue-950');
+
+            if (type === 'success') {
+                box.classList.add('bg-green-50', 'border-green-400', 'text-green-950');
+            } else if (type === 'warning') {
+                box.classList.add('bg-amber-50', 'border-amber-400', 'text-amber-950');
+            } else if (type === 'error') {
+                box.classList.add('bg-red-50', 'border-red-400', 'text-red-950');
+            } else {
+                box.classList.add('bg-blue-50', 'border-blue-400', 'text-blue-950');
+            }
+
+            box.innerHTML = message;
+            box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function showToast(msg) {
+            alert(msg);
+        }
+
+
+        function finishAndSaveStudentReport() {
+            // Calculate final metrics for the student
+            const sysAttempts = state.metrics.systemFirstAttempts;
+            const sysCorrectCount = sysAttempts.filter(x => x === true).length;
+            const sysPercent = Math.round((sysCorrectCount / 3) * 100);
+
+            const indexAttempts = state.metrics.indexFirstAttempts.flat();
+            const indexCorrectCount = indexAttempts.filter(x => x === true).length;
+            const indexPercent = Math.round((indexCorrectCount / indexAttempts.length) * 100);
+
+            const finalSysCorrect = sysAttempts[2];
+            const finalIndexUnits = state.metrics.indexFirstAttempts[2];
+            const finalIndexCorrect = finalIndexUnits.every(x => x === true);
+
+            let independenceLevel = "Perlu Bantuan";
+            if (finalSysCorrect && finalIndexCorrect) {
+                independenceLevel = "Mandiri";
+            } else if (finalSysCorrect || finalIndexCorrect) {
+                independenceLevel = "Sebagian Mandiri";
+            }
+
+            const nowStr = new Date().toLocaleString('id-ID', {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit'
+            }).replace(/\./g, ':');
+
+            const record = {
+                id: 'rec_' + Date.now(),
+                studentName: state.studentName,
+                timestamp: nowStr,
+                sysPercent: sysPercent,
+                sysCorrectCount: sysCorrectCount,
+                indexPercent: indexPercent,
+                indexCorrectCount: indexCorrectCount,
+                independenceLevel: independenceLevel,
+                errorLogs: [...new Set(state.metrics.errorLogs)],
+                metrics: JSON.parse(JSON.stringify(state.metrics))
+            };
+
+            // Save to localStorage for teacher portal
+            saveStudentRecord(record);
+
+            // Display individual dashboard
+            showDashboard(record);
+        }
+
+        function showDashboard(customRecord = null) {
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-teacher-portal').classList.add('hidden');
+            document.getElementById('screen-dashboard').classList.remove('hidden');
+            document.getElementById('header-controls').classList.add('hidden');
+
+            const isTeacherMode = state.isTeacherViewing;
+            const btnBackTeacher = document.getElementById('btn-back-to-teacher-portal');
+            if (isTeacherMode) {
+                btnBackTeacher.classList.remove('hidden');
+            } else {
+                btnBackTeacher.classList.add('hidden');
+            }
+
+            const activeName = customRecord ? customRecord.studentName : state.studentName;
+            const activeDate = customRecord ? customRecord.timestamp : new Date().toLocaleDateString('id-ID');
+            const metricsObj = customRecord ? customRecord.metrics : state.metrics;
+            const errorsArr = customRecord ? customRecord.errorLogs : state.metrics.errorLogs;
+
+            document.getElementById('report-student-name').innerText = activeName;
+            document.getElementById('report-date').innerText = activeDate;
+
+            // 1. Calculate System Analysis Accuracy
+            const sysAttempts = metricsObj.systemFirstAttempts;
+            const sysCorrectCount = sysAttempts.filter(x => x === true).length;
+            const sysPercent = Math.round((sysCorrectCount / 3) * 100);
+
+            document.getElementById('metric-system-percent').innerText = `${sysPercent}%`;
+            document.getElementById('metric-system-fraction').innerText = `(${sysCorrectCount} dari 3 kasus benar pada percobaan 1)`;
+            document.getElementById('bar-system-percent').style.width = `${sysPercent}%`;
+
+            const badgeSys = document.getElementById('badge-status-system');
+            if (sysPercent >= 80) {
+                badgeSys.innerText = "✓ Tercapai";
+                badgeSys.className = "text-xs font-bold px-2.5 py-1 rounded-full bg-green-100 text-green-800 border border-green-300";
+            } else {
+                badgeSys.innerText = "⚠ Belum Tercapai";
+                badgeSys.className = "text-xs font-bold px-2.5 py-1 rounded-full bg-red-100 text-red-800 border border-red-300";
+            }
+
+            // 2. Calculate Indexing Rules Accuracy
+            const indexAttempts = metricsObj.indexFirstAttempts.flat();
+            const indexCorrectCount = indexAttempts.filter(x => x === true).length;
+            const indexTotalCount = indexAttempts.length;
+            const indexPercent = Math.round((indexCorrectCount / indexTotalCount) * 100);
+
+            document.getElementById('metric-index-percent').innerText = `${indexPercent}%`;
+            document.getElementById('metric-index-fraction').innerText = `(${indexCorrectCount} dari ${indexTotalCount} unit benar pada percobaan 1)`;
+            document.getElementById('bar-index-percent').style.width = `${indexPercent}%`;
+
+            const badgeIndex = document.getElementById('badge-status-index');
+            if (indexPercent >= 80) {
+                badgeIndex.innerText = "✓ Tercapai";
+                badgeIndex.className = "text-xs font-bold px-2.5 py-1 rounded-full bg-green-100 text-green-800 border border-green-300";
+            } else {
+                badgeIndex.innerText = "⚠ Belum Tercapai";
+                badgeIndex.className = "text-xs font-bold px-2.5 py-1 rounded-full bg-red-100 text-red-800 border border-red-300";
+            }
+
+            // 3. Final Challenge Independence Level
+            const finalSysCorrect = sysAttempts[2];
+            const finalIndexUnits = metricsObj.indexFirstAttempts[2];
+            const finalIndexCorrect = finalIndexUnits.every(x => x === true);
+
+            const badgeIndep = document.getElementById('badge-independence');
+            const descIndep = document.getElementById('desc-independence');
+
+            if (finalSysCorrect && finalIndexCorrect) {
+                badgeIndep.innerText = "🌟 Mandiri";
+                badgeIndep.className = "text-base font-extrabold px-4 py-2 rounded-lg text-white bg-green-700 shadow";
+                descIndep.innerText = "Siswa mampu menganalisis sistem penyimpanan dan mengindeks nama badan tanpa bantuan sama sekali pada percobaan pertama.";
+            } else if (finalSysCorrect || finalIndexCorrect) {
+                badgeIndep.innerText = "⛅ Sebagian Mandiri";
+                badgeIndep.className = "text-base font-extrabold px-4 py-2 rounded-lg text-white bg-amber-600 shadow";
+                descIndep.innerText = "Siswa berhasil menyelesaikan salah satu aspek (sistem atau indeks) secara tepat pada tantangan akhir.";
+            } else {
+                badgeIndep.innerText = "🌧️ Perlu Bantuan";
+                badgeIndep.className = "text-base font-extrabold px-4 py-2 rounded-lg text-white bg-red-700 shadow";
+                descIndep.innerText = "Siswa masih memerlukan pendampingan ulang untuk konsep analisis sistem maupun aturan mengindeks.";
+            }
+
+            // 4. Frequent Errors List
+            const listErrors = document.getElementById('list-frequent-errors');
+            listErrors.innerHTML = '';
+            if (!errorsArr || errorsArr.length === 0) {
+                listErrors.innerHTML = '<li class="text-green-700 font-bold">Luar biasa! Tidak tercatat kekeliruan berulang selama latihan.</li>';
+            } else {
+                const uniqueErrors = [...new Set(errorsArr)];
+                uniqueErrors.forEach(err => {
+                    const li = document.createElement('li');
+                    li.innerText = err;
+                    listErrors.appendChild(li);
+                });
+            }
+
+            // 5. Automated Teacher Recommendation
+            const recEl = document.getElementById('teacher-recommendation');
+            if (sysPercent >= 80 && indexPercent >= 80) {
+                recEl.innerText = "Siswa telah mencapai ketuntasan kompetensi (>80%) pada analisis sistem dan aturan mengindeks. Siswa siap melanjutkan ke materi Pengurusan Surat Masuk/Keluar dan Kearsipan Digital.";
+            } else if (sysPercent >= 80 && indexPercent < 80) {
+                recEl.innerText = "Siswa sudah sangat menguasai pemilihan Sistem Penyimpanan Arsip, tetapi masih sering keliru pada Aturan Mengindeks Nama (misal: penempatan PT/CV atau kata sambung). Berikan latihan spesifik pemisahan unit indeks.";
+            } else if (sysPercent < 80 && indexPercent >= 80) {
+                recEl.innerText = "Siswa mahir mengindeks nama badan, namun perlu penguatan pada Analisis Kebutuhan Klien dalam menentukan sistem arsip. Lakukan diskusi studi kasus berbasis karakteristik dokumen perusahaan.";
+            } else {
+                recEl.innerText = "Siswa belum mencapai batas ketuntasan minimum (80%). Disarankan melakukan remedial kognitif untuk 5 Sistem Penyimpanan Arsip dan latihan terbimbing 4 Kaidah Mengindeks Nama.";
+            }
+        }
+
+
+        // ================= TEACHER PORTAL & LOGIN LOGIC =================
+        function openTeacherLoginModal() {
+            document.getElementById('teacher-pin-error').classList.add('hidden');
+            document.getElementById('input-teacher-pin').value = '';
+            document.getElementById('modal-teacher-login').classList.remove('hidden');
+            document.getElementById('input-teacher-pin').focus();
+        }
+
+        function closeTeacherLoginModal() {
+            document.getElementById('modal-teacher-login').classList.add('hidden');
+        }
+
+        function handleTeacherLogin(e) {
+            e.preventDefault();
+            const pin = document.getElementById('input-teacher-pin').value.trim();
+            
+            // Password PIN Default: 1234
+            if (pin === "1234" || pin === "guru123" || pin === "admin") {
+                closeTeacherLoginModal();
+                showTeacherPortal();
+            } else {
+                document.getElementById('teacher-pin-error').classList.remove('hidden');
+            }
+        }
+
+        function showTeacherPortal() {
+            state.isTeacherViewing = false;
+            document.getElementById('screen-welcome').classList.add('hidden');
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-dashboard').classList.add('hidden');
+            document.getElementById('screen-teacher-portal').classList.remove('hidden');
+            document.getElementById('header-controls').classList.remove('hidden');
+
+            renderTeacherPortalData();
+        }
+
+        function renderTeacherPortalData() {
+            const records = getSavedRecords();
+
+            // Calculate Portal Summary Stats
+            const total = records.length;
+            let totalSys = 0;
+            let totalIndex = 0;
+            let countMandiri = 0;
+
+            records.forEach(r => {
+                totalSys += r.sysPercent || 0;
+                totalIndex += r.indexPercent || 0;
+                if (r.independenceLevel === "Mandiri") countMandiri++;
+            });
+
+            const avgSys = total > 0 ? Math.round(totalSys / total) : 0;
+            const avgIndex = total > 0 ? Math.round(totalIndex / total) : 0;
+
+            document.getElementById('portal-stat-total').innerText = total;
+            document.getElementById('portal-stat-avg-system').innerText = `${avgSys}%`;
+            document.getElementById('portal-stat-avg-index').innerText = `${avgIndex}%`;
+            document.getElementById('portal-stat-independent').innerText = countMandiri;
+
+            // Render Table Rows
+            renderTeacherTable(records);
+        }
+
+        function renderTeacherTable(records) {
+            const tbody = document.getElementById('teacher-records-table-body');
+            tbody.innerHTML = '';
+
+            if (records.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="p-6 text-center text-gray-500 italic">
+                            Belum ada rekap data pengerjaan siswa. Data akan muncul otomatis setelah siswa menyelesaikan tantangan.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            records.forEach((rec, idx) => {
+                let badgeClass = "bg-gray-100 text-gray-800 border-gray-300";
+                if (rec.independenceLevel === "Mandiri") {
+                    badgeClass = "bg-green-100 text-green-800 border-green-300 font-bold";
+                } else if (rec.independenceLevel === "Sebagian Mandiri") {
+                    badgeClass = "bg-amber-100 text-amber-900 border-amber-300 font-bold";
+                } else {
+                    badgeClass = "bg-red-100 text-red-800 border-red-300 font-bold";
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-amber-50/50 transition";
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-gray-500">${idx + 1}</td>
+                    <td class="p-3 font-extrabold text-navy">${rec.studentName}</td>
+                    <td class="p-3 text-gray-600 text-xs">${rec.timestamp}</td>
+                    <td class="p-3 text-center font-bold">${rec.sysPercent}% (${rec.sysCorrectCount}/3)</td>
+                    <td class="p-3 text-center font-bold">${rec.indexPercent}% (${rec.indexCorrectCount}/14)</td>
+                    <td class="p-3 text-center">
+                        <span class="px-2.5 py-1 text-xs rounded-full border ${badgeClass}">
+                            ${rec.independenceLevel}
+                        </span>
+                    </td>
+                    <td class="p-3 text-center">
+                        <div class="flex justify-center gap-1">
+                            <button onclick="inspectStudentReport('${rec.id}')" class="bg-navy hover:bg-navyDark text-white font-bold px-2.5 py-1 rounded text-xs transition flex items-center gap-1">
+                                🔍 Lihat Detail
+                            </button>
+                            <button onclick="deleteSingleRecord('${rec.id}')" class="bg-red-100 hover:bg-red-200 text-red-700 p-1 rounded text-xs transition" title="Hapus Data">
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterTeacherTable() {
+            const query = document.getElementById('teacher-search-input').value.toLowerCase().trim();
+            const filterStatus = document.getElementById('teacher-filter-status').value;
+
+            const records = getSavedRecords();
+            const filtered = records.filter(rec => {
+                const matchesName = rec.studentName.toLowerCase().includes(query);
+                const matchesStatus = (filterStatus === "ALL" || rec.independenceLevel === filterStatus);
+                return matchesName && matchesStatus;
+            });
+
+            renderTeacherTable(filtered);
+        }
+
+        function inspectStudentReport(recordId) {
+            const records = getSavedRecords();
+            const found = records.find(r => r.id === recordId);
+            if (!found) return;
+
+            state.isTeacherViewing = true;
+            showDashboard(found);
+        }
+
+        function deleteSingleRecord(recordId) {
+            if (confirm("Apakah Anda yakin ingin menghapus data rekap siswa ini?")) {
+                let records = getSavedRecords();
+                records = records.filter(r => r.id !== recordId);
+                localStorage.setItem('arsiparis_student_records', JSON.stringify(records));
+                renderTeacherPortalData();
+            }
+        }
+
+        function clearAllStudentRecords() {
+            if (confirm("⚠️ PERINGATAN: Apakah Anda yakin ingin menghapus SEMUA data rekap hasil siswa? Data yang dihapus tidak dapat dikembalikan.")) {
+                localStorage.setItem('arsiparis_student_records', JSON.stringify([]));
+                renderTeacherPortalData();
+            }
+        }
+
+        function exportTeacherDataCSV() {
+            const records = getSavedRecords();
+            if (records.length === 0) {
+                alert("Belum ada data rekap siswa untuk diekspor!");
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "No,Nama Siswa,Waktu Selesai,Akurasi Sistem (%),Akurasi Indeks (%),Kemandirian\n";
+
+            records.forEach((r, i) => {
+                const nameEsc = `"${r.studentName.replace(/"/g, '""')}"`;
+                csvContent += `${i + 1},${nameEsc},${r.timestamp},${r.sysPercent},${r.indexPercent},${r.independenceLevel}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Rekap_Nilai_Arsiparis_Muda_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+
+        function openRulebookModal() {
+            document.getElementById('modal-rulebook').classList.remove('hidden');
+        }
+
+        function closeRulebookModal() {
+            document.getElementById('modal-rulebook').classList.add('hidden');
+        }
+
+        function openHelpModal() {
+            document.getElementById('modal-help').classList.remove('hidden');
+        }
+
+        function closeHelpModal() {
+            document.getElementById('modal-help').classList.add('hidden');
+        }
+
+        function resetApp() {
+            // Reset State
+            state.studentName = '';
+            state.currentCaseIndex = 0;
+            state.currentStage = 'A';
+            state.isTeacherViewing = false;
+            state.metrics = {
+                systemFirstAttempts: [null, null, null],
+                indexFirstAttempts: [
+                    [null, null, null, null],
+                    [null, null, null, null, null],
+                    [null, null, null, null, null]
+                ],
+                totalTries: { c1a: 0, c1b: 0, c2a: 0, c2b: 0, c3a: 0, c3b: 0 },
+                hintsUsed: 0,
+                errorLogs: []
+            };
+
+            document.getElementById('input-student-name').value = '';
+            document.getElementById('display-student-name').innerText = 'Siswa: -';
+            document.getElementById('screen-dashboard').classList.add('hidden');
+            document.getElementById('screen-teacher-portal').classList.add('hidden');
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-welcome').classList.remove('hidden');
+            document.getElementById('header-controls').classList.remove('hidden');
+            document.getElementById('btn-rulebook').classList.add('hidden');
+            document.getElementById('btn-help').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
